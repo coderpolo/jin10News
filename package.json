@@ -1,0 +1,64 @@
+{
+  "name": "jin10-news",
+  "displayName": "金十数据快讯",
+  "description": "自动抓取金十财经快讯并显示在Output面板",
+  "version": "1.0.0",
+  "publisher": "local",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "jin10-news.start",
+        "title": "Jin10: 开始抓取快讯"
+      },
+      {
+        "command": "jin10-news.stop",
+        "title": "Jin10: 停止抓取快讯"
+      },
+      {
+        "command": "jin10-news.refresh",
+        "title": "Jin10: 立即刷新"
+      },
+      {
+        "command": "jin10-news.clearCache",
+        "title": "Jin10: 清除缓存"
+      }
+    ],
+    "configuration": {
+      "title": "金十数据快讯",
+      "properties": {
+        "jin10-news.refreshInterval": {
+          "type": "number",
+          "default": 30,
+          "description": "刷新间隔（秒）"
+        },
+        "jin10-news.showImportantOnly": {
+          "type": "boolean",
+          "default": false,
+          "description": "仅显示重要新闻"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}
