@@ -12,6 +12,9 @@
   ],
   "activationEvents": [],
   "main": "./out/extension.js",
+  "extensionKind": [
+    "ui"
+  ],
   "contributes": {
     "commands": [
       {
@@ -43,6 +46,11 @@
           "type": "boolean",
           "default": false,
           "description": "仅显示重要新闻"
+        },
+        "jin10-news.debug": {
+          "type": "boolean",
+          "default": false,
+          "description": "开启调试日志"
         }
       }
     }

@@ -1,5 +1,7 @@
 import axios from 'axios';
 import * as https from 'https';
+import * as dns from 'dns';
+import * as vscode from 'vscode'; // 引入 vscode
 
 export interface NewsItem {
     id: string;
@@ -28,22 +30,67 @@ export function setDebugLogger(logger: (msg: string) => void) {
 }
 
 function log(msg: string) {
-    if (debugLogger) {
+    // 检查配置，只有开启调试日志才输出
+    const config = vscode.workspace.getConfiguration('jin10-news');
+    if (config.get<boolean>('debug', false) && debugLogger) {
         debugLogger(msg);
     }
 }
 
 export class Jin10Service {
     private seenIds: Set<string> = new Set();
-    // 使用可用的API地址
-    private readonly apiUrl = 'https://www.jin10.com/flash_newest.js';
 
-    // 创建不使用代理的https agent
+    // 默认备选IP（阿里云CDN IP池）
+    private readonly defaultIps = [
+        '220.181.171.124',
+        '220.181.171.125',
+        '220.181.171.126',
+        '220.181.171.127',
+        '220.181.171.128',
+        '220.181.171.129',
+        '220.181.171.130',
+        '220.181.171.131'
+    ];
+    private availableIps: string[] = [];
+    private readonly domain = 'www.jin10.com';
+    private readonly apiPath = '/flash_newest.js';
+
+    // 创建不使用代理的https agent，并忽略证书错误（因为使用IP访问）
     private readonly httpsAgent = new https.Agent({
-        rejectUnauthorized: true
+        rejectUnauthorized: false
     });
 
+    constructor() {
+        this.availableIps = [...this.defaultIps];
+        this.resolveDomainIps();
+    }
+
+    // 尝试解析域名获取最新IP池
+    private resolveDomainIps() {
+        dns.resolve4(this.domain, (err, addresses) => {
+            if (err) {
+                log(`⚠️ 域名解析失败: ${err.message}，将使用默认IP`);
+            } else if (addresses && addresses.length > 0) {
+                log(`✅ 域名解析成功: ${addresses.join(', ')}`);
+                // 合并解析出的IP和默认IP，去重
+                this.availableIps = Array.from(new Set([...addresses, ...this.defaultIps]));
+            }
+        });
+    }
+
+    // 随机获取一个IP
+    private getRandomIp(): string {
+        if (this.availableIps.length === 0) {
+            return this.defaultIps[0];
+        }
+        const index = Math.floor(Math.random() * this.availableIps.length);
+        return this.availableIps[index];
+    }
+
     async fetchFlashNews(): Promise<NewsItem[]> {
+        const ip = this.getRandomIp();
+        const url = `https://${ip}${this.apiPath}`;
+
         try {
             // 清除环境变量中的代理设置
             const originalHttpProxy = process.env.HTTP_PROXY;
@@ -53,12 +100,13 @@ export class Jin10Service {
             delete process.env.http_proxy;
             delete process.env.https_proxy;
 
-            log(`🌐 请求URL: ${this.apiUrl}`);
+            log(`🌐 请求URL: ${url} (Host: ${this.domain})`);
 
-            const response = await axios.get(this.apiUrl, {
+            const response = await axios.get(url, {
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                     'Referer': 'https://www.jin10.com/',
+                    'Host': this.domain, // 必须加上Host头
                 },
                 timeout: 15000,
                 proxy: false,

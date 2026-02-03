@@ -81,7 +81,7 @@ export class Scheduler {
         }
 
         this.outputManager.appendLine(`开始时间: ${new Date().toLocaleString('zh-CN')}`);
-        this.outputManager.appendLine('最新消息显示在顶部 | 自动去重 | 本地缓存');
+        this.outputManager.appendLine('最新消息显示在底部 | 自动去重 | 本地缓存');
         this.outputManager.appendSeparator();
 
         // 先显示缓存的消息
@@ -195,8 +195,9 @@ export class Scheduler {
         this.outputManager.appendLine(`最后更新: ${updateTime} | 新增: ${newCount} 条 | 共 ${this.displayedNews.length} 条 (已缓存)`);
         this.outputManager.appendSeparator();
 
-        // 按时间倒序显示所有新闻（最新的在顶部）
-        for (const item of this.displayedNews) {
+        // 按时间正序显示所有新闻（最新的在底部，方便 Output 自动滚动到底部查看）
+        const reversedNews = [...this.displayedNews].reverse();
+        for (const item of reversedNews) {
             const formatted = this.jin10Service.formatNews(item);
             if (formatted) {
                 this.outputManager.appendNews(formatted);
